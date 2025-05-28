@@ -1,6 +1,8 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ page pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -80,7 +82,7 @@
                     <tr>
                         <td>${product.id}</td>
                         <td>${product.name}</td>
-                        <td>${product.price} $</td>
+<td><fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/> vnđ</td>
                         <td>${product.quantity}</td>
                         <td>${product.sold}</td>
                         <td>${product.factory}</td>

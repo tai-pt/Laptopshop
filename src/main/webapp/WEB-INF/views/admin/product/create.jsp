@@ -71,10 +71,14 @@
 
                     <!-- Price -->
                     <div class="mb-3">
-                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Price:</label>
-                        <form:input path="price" class="form-control" />
-                        <form:errors path="price" cssClass="text-danger" />
-                    </div>
+    <label class="form-label"><i class="fas fa-dollar-sign"></i> Giá sản phẩm (VNĐ):</label>
+    <div class="input-group">
+        <form:input path="price" class="form-control" />
+        <span class="input-group-text">₫</span>
+    </div>
+    <form:errors path="price" cssClass="text-danger" />
+</div>
+
 
                     <!-- Image Upload -->
                    <div class="mb-3">

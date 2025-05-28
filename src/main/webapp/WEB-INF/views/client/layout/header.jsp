@@ -36,7 +36,7 @@
                                     <a href="#" class="dropdown-toggle d-flex align-items-center" id="userDropdown"
                                         data-bs-toggle="dropdown">
                                         <img src="${pageContext.request.contextPath}/images/avatar/${sessionScope.avatar}"
-                                            class="rounded-circle" style="width: 40px; height: 40px;">
+                                            class="rounded-circle" style="width: 4	0px; height: 40px;">
                                         <span class="ms-2">${sessionScope.fullName}</span>
                                     </a>
 
@@ -52,7 +52,7 @@
                                         <li>
                                             <hr class="dropdown-divider">
                                         </li>
-                                        <li><a class="dropdown-item" href="/profile">Quản lý tài khoản</a></li>
+                                        <li><a class="dropdown-item" href="${pageContext.request.contextPath}/profile">Quản lý tài khoản</a></li>
                                         <li><a class="dropdown-item" href="/laptopshop/order-history">Lịch sử mua hàng</a></li>
                                         <li>
                                             <hr class="dropdown-divider">

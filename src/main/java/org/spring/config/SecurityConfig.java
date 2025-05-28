@@ -59,7 +59,7 @@ public class SecurityConfig {
 				.dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE).permitAll()
 
 				.requestMatchers("/", "/login", "/register", "/product/**", "/client/**", "/css/**", "/js/**",
-						"/images/**")
+						"/images/**", "/resetPassword", "/changePassword", "/savePassword")
 				.permitAll()
 
 				.requestMatchers("/admin/**").hasRole("ADMIN")
@@ -75,7 +75,7 @@ public class SecurityConfig {
 				.rememberMe(r -> r.rememberMeServices(rememberMeServices()))
 				.formLogin(formLogin -> formLogin.loginPage("/login").failureUrl("/login?error")
 						.successHandler(customSuccessHandler()).permitAll())
-				.exceptionHandling(ex -> ex.accessDeniedPage("/accessDenied"));
+				.exceptionHandling(ex -> ex.accessDeniedPage("/access-denied"));
 
 		return http.build();
 	}

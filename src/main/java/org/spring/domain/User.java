@@ -45,10 +45,22 @@ public class User {
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "cart_id", referencedColumnName = "id")
 	private Cart cart;
+//
+	@OneToMany(mappedBy = "user")
+	List<PasswordResetToken> passwordResetTokens;
+
 	// Role
 	@ManyToOne
 	@JoinColumn(name = "role_id")
 	private Role role;
+
+	public List<Order> getOrders() {
+		return orders;
+	}
+
+	public void setOrders(List<Order> orders) {
+		this.orders = orders;
+	}
 
 	// Order
 	@OneToMany(mappedBy = "user")

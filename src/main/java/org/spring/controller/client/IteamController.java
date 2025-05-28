@@ -6,6 +6,7 @@ import java.util.List;
 import org.spring.domain.Cart;
 import org.spring.domain.CartDetails;
 import org.spring.domain.Order;
+import org.spring.domain.OrderDetails;
 import org.spring.domain.Products;
 import org.spring.domain.User;
 import org.spring.service.OrderService;
@@ -139,6 +140,15 @@ public class IteamController {
 		List<Order> orders = orderService.fetchOrderByUser(currentUser);
 		model.addAttribute("orders", orders);
 		return "client/cart/order-history";
+	}
+
+	// ViewOrder
+	@GetMapping("/detail")
+	public String ViewOrder(Model model, @RequestParam("id") long orderId) {
+		Order order = orderService.getOrderById(orderId);
+		List<OrderDetails> orderDetails = orderService.ViewOrder(order);
+		model.addAttribute("orderDetails", orderDetails);
+		return "client/cart/view-order";
 	}
 
 }

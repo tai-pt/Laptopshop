@@ -57,9 +57,10 @@
                                         </c:choose>
                                     </td>
                                     <td>
-                                        <a href="${pageContext.request.contextPath}/order/detail/${order.id}" class="btn btn-sm btn-primary">
+                                        <a href="${pageContext.request.contextPath}/detail?id=${order.id}" class="btn btn-sm btn-primary">
                                             <i class="fas fa-eye"></i> Xem
                                         </a>
+                                        
                                     </td>
                                 </tr>
                             </c:forEach>

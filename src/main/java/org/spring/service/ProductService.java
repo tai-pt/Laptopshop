@@ -128,7 +128,7 @@ public class ProductService {
 			if (currentCart.getSum() > 1) {
 				int s = currentCart.getSum() - 1;
 				httpSession.setAttribute("sum", s);
-				cartRepository.delete(currentCart);
+				cartRepository.deleteById(cartDetailsId);
 
 			}
 

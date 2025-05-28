@@ -143,7 +143,7 @@
                                                     </div>
                                                     <div class="mt-4">
                                                         <i class="fas fa-arrow-left"></i>
-                                                        <a href="/cart">Quay lại giỏ hàng</a>
+                                                        <a href="/laptopshop/cart">Quay lại giỏ hàng</a>
                                                     </div>
                                                 </div>
                                             </div>

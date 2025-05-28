@@ -111,8 +111,8 @@ public class ProductController {
 	}
 
 	@PostMapping("product/update")
-	public String productUpdate(@ModelAttribute("newProduct") @Valid Products products,
-			@RequestParam("avatarPath") MultipartFile multipartFile, BindingResult result) {
+	public String productUpdate(@ModelAttribute("newProduct") @Valid Products products, BindingResult bindingResult,
+			@RequestParam("avatarPath") MultipartFile multipartFile) {
 		Products currentProduct = productService.getById(products.getId());
 		if (currentProduct != null) {
 			currentProduct.setDetailDesc(products.getDetailDesc());

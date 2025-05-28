@@ -72,4 +72,10 @@ public class OrderService {
 		return orderDetailsRepository.findByOrder(order);
 	}
 
+	// ViewOrderCustomer
+	public List<OrderDetails> ViewOrder(Order order) {
+		return orderDetailsRepository.findByOrder(order);
+
+	}
+
 }
