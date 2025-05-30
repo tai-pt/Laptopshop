@@ -1,5 +1,6 @@
 package org.spring.domain;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -42,12 +43,31 @@ public class User {
 	private String password;
 	@Column(name = "avatar")
 	private String avatar;
+	@Column(name = "reset_password_token")
+	private String resetPasswordToken;
+
+	@Column(name = "reset_token_created_at")
+	private LocalDateTime resetTokenCreatedAt;
+
+	public LocalDateTime getResetTokenCreatedAt() {
+		return resetTokenCreatedAt;
+	}
+
+	public void setResetTokenCreatedAt(LocalDateTime resetTokenCreatedAt) {
+		this.resetTokenCreatedAt = resetTokenCreatedAt;
+	}
+
+	public String getResetPasswordToken() {
+		return resetPasswordToken;
+	}
+
+	public void setResetPasswordToken(String resetPasswordToken) {
+		this.resetPasswordToken = resetPasswordToken;
+	}
+
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "cart_id", referencedColumnName = "id")
 	private Cart cart;
-//
-	@OneToMany(mappedBy = "user")
-	List<PasswordResetToken> passwordResetTokens;
 
 	// Role
 	@ManyToOne

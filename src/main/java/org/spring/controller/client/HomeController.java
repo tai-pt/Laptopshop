@@ -1,26 +1,22 @@
 package org.spring.controller.client;
 
+import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.spring.domain.PasswordResetToken;
 import org.spring.domain.Products;
 import org.spring.domain.User;
 import org.spring.domain.dto.RegisterDTO;
 import org.spring.domain.dto.UserDTO;
-import org.spring.service.PasswordResetTokenService;
 import org.spring.service.ProductService;
-import org.spring.service.SercurityService;
 import org.spring.service.UploadService;
 import org.spring.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.data.repository.query.Param;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,7 +26,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -41,21 +39,13 @@ public class HomeController {
 	private final PasswordEncoder passwordEncoder;
 	private final ProductService productService;
 	private final UploadService uploadService;
-	private final JavaMailSender javaMailSender;
-	private final PasswordResetTokenService passwordResetTokenService;
-	private final SercurityService sercurityService;
 
 	public HomeController(UserService userService, PasswordEncoder passwordEncoder, ProductService productService,
-			UploadService uploadService, JavaMailSender javaMailSender,
-			PasswordResetTokenService passwordResetTokenService, SercurityService sercurityService) {
-		super();
+			UploadService uploadService) {
 		this.userService = userService;
 		this.passwordEncoder = passwordEncoder;
 		this.productService = productService;
 		this.uploadService = uploadService;
-		this.javaMailSender = javaMailSender;
-		this.passwordResetTokenService = passwordResetTokenService;
-		this.sercurityService = sercurityService;
 	}
 
 	// List Product
@@ -95,63 +85,64 @@ public class HomeController {
 	}
 
 	// ForgotPassword
-	@GetMapping("/resetPassword")
-	public String getMethodName() {
-		return "client/auth/reset-password";
+	@GetMapping("/forgot_password")
+	public String ForgotPassWord() {
+		return "client/auth/forgot_password";
 	}
 
-	@PostMapping("/resetPassword")
-	public String resetPassword(@RequestParam("email") String email, HttpServletRequest request) {
+	@PostMapping("/forgot_password")
+	public String ForgotPassWord(@RequestParam("email") String email, HttpServletRequest request,
+			RedirectAttributes redirectAttributes) throws UnsupportedEncodingException, MessagingException {
+
 		User user = userService.findByEmail(email);
+
 		if (user != null) {
-	System.out.println("User email: " + user.getEmail());
-    System.out.println("User ID: " + user.getId());
-			
 			String token = UUID.randomUUID().toString();
-			passwordResetTokenService.createPasswordResetTokenForUser(user, token);
-			try {
-				String appUrl = passwordResetTokenService.getAppUrl(request);
-				SimpleMailMessage emailMessage = passwordResetTokenService.constructResetTokenEmail(appUrl,
-						request.getLocale(), token, user);
-				javaMailSender.send(emailMessage);
-
-			} catch (Exception e) {
-			}
-		}
-		return "redirect:/changePassword";
-	}
-
-	@GetMapping("/changePassword")
-	public String showChangePasswordPage(Locale locale, Model model, @RequestParam("token") String token, long id) {
-		String result = sercurityService.validatePasswordResetToken(id, token);
-		if (result != null) {
-			return "redirect:/login" + locale.getLanguage() + "&message=";
+			userService.updateResetPasswordToken(token, email);
+			String resetPasswordLink = userService.getSiteURL(request) + "/reset_password?token=" + token;
+			userService.sendEmail(email, resetPasswordLink);
+			redirectAttributes.addFlashAttribute("message", "Check Link Reset in Email");
 		} else {
-			model.addAttribute("token", token);
-			return "redirect:/updatePassword" + locale.getLanguage();
+			redirectAttributes.addFlashAttribute("error", "Cannot find Email: " + email);
+		}
+
+		return "redirect:/forgot_password";
+	}
+
+	@GetMapping("/reset_password")
+	public String showResetPasswordForm(@Param(value = "token") String token, Model model) {
+		User user = userService.getByResetPasswordToken(token);
+		model.addAttribute("token", token);
+
+		if (user == null) {
+			model.addAttribute("message", "Invalid Token");
+			return "message";
+		}
+
+		return "client/auth/reset_password_form";
+	}
+
+	@PostMapping("/reset_password")
+	public String processResetPassword(HttpServletRequest request, RedirectAttributes redirectAttributes) {
+		String token = request.getParameter("token");
+		String password = request.getParameter("password");
+
+		User user = userService.getByResetPasswordToken(token);
+		redirectAttributes.addFlashAttribute("title", "Reset your password");
+
+		if (user == null) {
+			redirectAttributes.addFlashAttribute("message", "Invalid Token");
+			return "redirect:/message";
+		} else {
+			userService.updatePassWord(password, user);
+			redirectAttributes.addFlashAttribute("message", "You have successfully changed your password.");
+			return "redirect:/message";
 		}
 	}
 
-	@GetMapping("/savePassword")
-	public String savePass() {
-		return "client/auth/update-password";
-	}
-
-	@PostMapping("/savePassword")
-	public String savePassword(@RequestParam("token") String token, @RequestParam("password") String password,
-			Model model) {
-		PasswordResetToken resetToken = passwordResetTokenService.findByToken(token);
-
-		if (resetToken == null || resetToken.isExpired()) {
-			model.addAttribute("message", "Token không hợp lệ hoặc đã hết hạn.");
-			return "error";
-		}
-
-		User user = resetToken.getUser();
-		passwordResetTokenService.changeUserPassword(user, password);
-
-		model.addAttribute("message", "Mật khẩu đã được thay đổi thành công.");
-		return "redirect:/login";
+	@GetMapping("/message")
+	public String Message() {
+		return "client/auth/message";
 	}
 
 	// AccessDenied

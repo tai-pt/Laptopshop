@@ -1,5 +1,7 @@
 package org.spring.service;
 
+import java.io.UnsupportedEncodingException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,9 +13,15 @@ import org.spring.repository.OrderRepository;
 import org.spring.repository.ProductRepository;
 import org.spring.repository.RoleRepository;
 import org.spring.repository.UserRepository;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public class UserService {
@@ -24,9 +32,11 @@ public class UserService {
 	private final ProductRepository productRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final UploadService uploadService;
+	private final JavaMailSender javaMailSender;
 
 	public UserService(UserRepository userRepository, RoleRepository roleRepository, OrderRepository orderRepository,
-			ProductRepository productRepository, PasswordEncoder passwordEncoder, UploadService uploadService) {
+			ProductRepository productRepository, PasswordEncoder passwordEncoder, UploadService uploadService,
+			JavaMailSender javaMailSender) {
 		super();
 		this.userRepository = userRepository;
 		this.roleRepository = roleRepository;
@@ -34,6 +44,7 @@ public class UserService {
 		this.productRepository = productRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.uploadService = uploadService;
+		this.javaMailSender = javaMailSender;
 	}
 
 	// list
@@ -87,11 +98,6 @@ public class UserService {
 		user.setPhone(userDTO.getPhone());
 		user.setAddress(userDTO.getAddress());
 
-		if (userDTO.getPassword() != null && !userDTO.getPassword().isBlank()) {
-			String pass = passwordEncoder.encode(userDTO.getPassword());
-			user.setPassword(pass);
-		}
-
 		if (!multipartFile.isEmpty()) {
 			String avatar = uploadService.handleSaveUploadFile(multipartFile, "avatar");
 			user.setAvatar(avatar);
@@ -135,5 +141,59 @@ public class UserService {
 	}
 
 	// Forgot Password
+	public void updateResetPasswordToken(String token, String email) {
+		User user = userRepository.findByEmail(email);
+		if (user != null) {
+			user.setResetPasswordToken(token);
+			user.setResetTokenCreatedAt(LocalDateTime.now());
+			userRepository.save(user);
+		} else {
+
+		}
+	}
+
+	public User getByResetPasswordToken(String token) {
+		return userRepository.findByResetPasswordToken(token);
+	}
+
+	public void sendEmail(String recipientEmail, String link) throws MessagingException, UnsupportedEncodingException {
+		MimeMessage message = javaMailSender.createMimeMessage();
+		MimeMessageHelper helper = new MimeMessageHelper(message);
+
+		helper.setFrom("phamtantai251105@gmail.com", "Reset Password !");
+		helper.setTo(recipientEmail);
+
+		String subject = "Here's the link to reset your password";
+
+		String content = "<p>Hello,</p>" + "<p>You have requested to reset your password.</p>"
+				+ "<p>Click the link below to change your password:</p>" + "<p><a href=\"" + link
+				+ "\">Change my password</a></p>" + "<br>" + "<p>Ignore this email if you do remember your password, "
+				+ "or you have not made the request.</p>";
+
+		helper.setSubject(subject);
+
+		helper.setText(content, true);
+
+		javaMailSender.send(message);
+
+	}
+
+	public String getSiteURL(HttpServletRequest request) {
+		String siteURL = request.getRequestURL().toString();
+		return siteURL.replace(request.getServletPath(), "");
+	}
+
+	public User updatePassWord(String newPass, User user) {
+		String passWordUpdate = passwordEncoder.encode(newPass);
+		user.setPassword(passWordUpdate);
+		user.setResetPasswordToken(null);
+		return userRepository.save(user);
+
+	}
+
+	public boolean isResetTokenExpired(User user) {
+		LocalDateTime createdAt = user.getResetTokenCreatedAt();
+		return createdAt.isBefore(LocalDateTime.now().minusHours(2));
+	}
 
 }

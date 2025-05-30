@@ -18,15 +18,6 @@
             <input type="text" class="form-control" id="fullName" name="fullName" value="${user.fullName}" required>
         </div>
 
-       
-      
-
-        <!-- Mật khẩu -->
-        <div class="mb-3">
-            <label for="password" class="form-label">Mật khẩu mới</label>
-            <input type="password" class="form-control" id="password" name="password" required>
-        </div>
-
         <!-- Số điện thoại -->
         <div class="mb-3">
             <label for="phone" class="form-label">Số điện thoại</label>
