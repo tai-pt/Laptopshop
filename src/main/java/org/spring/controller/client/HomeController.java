@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.spring.domain.Products;
 import org.spring.domain.User;
+import org.spring.domain.dto.PasswordDTO;
 import org.spring.domain.dto.RegisterDTO;
 import org.spring.domain.dto.UserDTO;
 import org.spring.service.ProductService;
@@ -113,6 +114,7 @@ public class HomeController {
 	public String showResetPasswordForm(@Param(value = "token") String token, Model model) {
 		User user = userService.getByResetPasswordToken(token);
 		model.addAttribute("token", token);
+		model.addAttribute("password", new PasswordDTO());
 
 		if (user == null) {
 			model.addAttribute("message", "Invalid Token");
@@ -123,10 +125,12 @@ public class HomeController {
 	}
 
 	@PostMapping("/reset_password")
-	public String processResetPassword(HttpServletRequest request, RedirectAttributes redirectAttributes) {
-		String token = request.getParameter("token");
-		String password = request.getParameter("password");
-
+	public String postMethodName(@RequestParam("token") String token,
+			@ModelAttribute("password") @Valid PasswordDTO passwordDTO, BindingResult result,
+			RedirectAttributes redirectAttributes) {
+		if (result.hasErrors()) {
+			return "client/auth/reset_password_form";
+		}
 		User user = userService.getByResetPasswordToken(token);
 		redirectAttributes.addFlashAttribute("title", "Reset your password");
 
@@ -134,10 +138,11 @@ public class HomeController {
 			redirectAttributes.addFlashAttribute("message", "Invalid Token");
 			return "redirect:/message";
 		} else {
-			userService.updatePassWord(password, user);
+			userService.updatePassWrord(passwordDTO, user);
 			redirectAttributes.addFlashAttribute("message", "You have successfully changed your password.");
-			return "redirect:/message";
+
 		}
+		return "redirect:/message";
 	}
 
 	@GetMapping("/message")
@@ -188,6 +193,36 @@ public class HomeController {
 		User user = userService.findByEmail(email);
 		model.addAttribute("user", user);
 		return "client/homepage/profile";
+	}
+
+	// Change-Password
+	@GetMapping("/change-password")
+	public String ChangePassword(Model model, Principal principal) {
+		String email = principal.getName();
+		User user = userService.findByEmail(email);
+		model.addAttribute("password", new PasswordDTO());
+		model.addAttribute("user", user);
+		return "client/homepage/change-password";
+	}
+
+	@PostMapping("/change-password")
+	public String ChangePassword(@ModelAttribute("pass") @Valid PasswordDTO passwordDTO, BindingResult bindingResult,
+			Principal principal, RedirectAttributes redirectAttributes) throws Exception {
+
+		if (bindingResult.hasErrors()) {
+			bindingResult.rejectValue("confirmPassword", "error.confirmPassword", "Xác nhận mật khẩu không khớp");
+			return "client/homepage/change-pass";
+		}
+		String email = principal.getName();
+		User user = userService.findByEmail(email);
+		if (user == null) {
+			redirectAttributes.addFlashAttribute("message", "Invalid Token");
+			return "redirect:/message";
+		} else {
+			userService.updatePassword(email, passwordDTO);
+		}
+
+		return "redirect:/profile";
 	}
 
 	// Update-Account

@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.spring.domain.Role;
 import org.spring.domain.User;
+import org.spring.domain.dto.PasswordDTO;
 import org.spring.domain.dto.RegisterDTO;
 import org.spring.domain.dto.UserDTO;
 import org.spring.repository.OrderRepository;
@@ -140,6 +141,29 @@ public class UserService {
 		return userRepository.existsByFullName(fullName);
 	}
 
+	// Check-Password
+	public void updatePassword(String email, PasswordDTO passwordDTO) throws Exception {
+		// Find the user by username or throw an exception if not found
+		User user = userRepository.findByEmail(email);
+
+		// Check if the current password matches
+		if (!passwordEncoder.matches(passwordDTO.getOldPassword(), user.getPassword())) {
+			throw new Exception("Current password is incorrect");
+		}
+
+		// Encode and set the new password, then save the user
+		user.setPassword(passwordEncoder.encode(passwordDTO.getPassword()));
+		userRepository.save(user);
+	}
+
+	// Change-Password
+	public User changePass(PasswordDTO passwordDTO, User user) {
+		String pass = passwordEncoder.encode(passwordDTO.getPassword());
+		user.setPassword(pass);
+		return userRepository.save(user);
+
+	}
+
 	// Forgot Password
 	public void updateResetPasswordToken(String token, String email) {
 		User user = userRepository.findByEmail(email);
@@ -183,9 +207,9 @@ public class UserService {
 		return siteURL.replace(request.getServletPath(), "");
 	}
 
-	public User updatePassWord(String newPass, User user) {
-		String passWordUpdate = passwordEncoder.encode(newPass);
-		user.setPassword(passWordUpdate);
+	public User updatePassWrord(PasswordDTO passwordDTO, User user) {
+		String newPass = passwordEncoder.encode(passwordDTO.getPassword());
+		user.setPassword(newPass);
 		user.setResetPasswordToken(null);
 		return userRepository.save(user);
 

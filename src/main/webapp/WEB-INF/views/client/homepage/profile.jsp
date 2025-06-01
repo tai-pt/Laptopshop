@@ -42,9 +42,16 @@
                         <li class="list-group-item"><strong>Địa chỉ:</strong> ${user.address}</li>
                     </ul>
 
-                    <div class="mt-4 d-flex justify-content-between">
-                        <a href="/laptopshop" class="btn btn-outline-primary px-4">Trang chủ</a>
-                        <a href="/laptopshop/edit-account" class="btn btn-primary px-4">Chỉnh sửa</a>
+                    <div class="mt-4 d-flex justify-content-between flex-wrap gap-2">
+                        <a href="/laptopshop" class="btn btn-outline-primary px-4">
+                            <i class="fas fa-home me-1"></i> Trang chủ
+                        </a>
+                        <a href="/laptopshop/edit-account" class="btn btn-primary px-4">
+                            <i class="fas fa-edit me-1"></i> Chỉnh sửa
+                        </a>
+                        <a href="/laptopshop/change-password" class="btn btn-warning text-white px-4">
+                            <i class="fas fa-key me-1"></i> Đổi mật khẩu
+                        </a>
                     </div>
                 </div>
             </div>
