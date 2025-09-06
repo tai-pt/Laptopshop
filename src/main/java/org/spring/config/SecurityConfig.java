@@ -1,19 +1,24 @@
 package org.spring.config;
 
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.SessionCookieConfig;
 import org.spring.service.CustomUserDetailsService;
 import org.spring.service.UserService;
+import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.session.security.web.authentication.SpringSessionRememberMeServices;
-
-import jakarta.servlet.DispatcherType;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.security.web.session.SessionInformationExpiredStrategy;
+import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 
 @Configuration
 public class SecurityConfig {
@@ -29,12 +34,16 @@ public class SecurityConfig {
 	}
 
 	@Bean
+	public SessionRegistry sessionRegistry() {
+		return new SessionRegistryImpl();
+	}
+
+	@Bean
 	public DaoAuthenticationProvider authProvider(PasswordEncoder passwordEncoder,
-			UserDetailsService userDetailsService) {
+												  UserDetailsService userDetailsService) {
 		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
 		authProvider.setUserDetailsService(userDetailsService);
 		authProvider.setPasswordEncoder(passwordEncoder);
-		// authProvider.setHideUserNotFoundExceptions(false);
 		return authProvider;
 	}
 
@@ -44,40 +53,66 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	public SpringSessionRememberMeServices rememberMeServices() {
-		SpringSessionRememberMeServices rememberMeServices = new SpringSessionRememberMeServices();
-		// optionally customize
-		rememberMeServices.setAlwaysRemember(true);
-
-		return rememberMeServices;
+	public CustomLogoutHandler customLogoutHandler(SessionRegistry sessionRegistry) {
+		return new CustomLogoutHandler(sessionRegistry);
 	}
 
 	@Bean
-	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		// v6. lamda
-		http.authorizeHttpRequests(authorize -> authorize
-				.dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE).permitAll()
+	public HttpSessionEventPublisher httpSessionEventPublisher() {
+		return new HttpSessionEventPublisher();
+	}
 
-				.requestMatchers("/", "/login", "/register", "/product/**", "/client/**", "/css/**", "/js/**",
-						"/images/**", "/forgot_password", "/reset_password", "/message", "/collections")
-				.permitAll()
+	@Bean
+	public SessionInformationExpiredStrategy sessionInformationExpiredStrategy() {
+		return new SimpleRedirectSessionInformationExpiredStrategy("/login?expired=true");
+	}
 
-				.requestMatchers("/admin/**").hasRole("ADMIN")
+	@Bean
+	public ServletContextInitializer servletContextInitializer() {
+		return servletContext -> {
+			SessionCookieConfig sessionCookieConfig = servletContext.getSessionCookieConfig();
+			sessionCookieConfig.setMaxAge(-1);
+			sessionCookieConfig.setHttpOnly(true);
+			sessionCookieConfig.setSecure(true);
+		};
+	}
 
-				.anyRequest().authenticated())
-
-				.sessionManagement((sessionManagement) -> sessionManagement
-						.sessionCreationPolicy(SessionCreationPolicy.ALWAYS).invalidSessionUrl("/logout?expired")
-						.maximumSessions(1).maxSessionsPreventsLogin(false))
-
-				.logout(logout -> logout.deleteCookies("JSESSIONID").invalidateHttpSession(true))
-
-				.rememberMe(r -> r.rememberMeServices(rememberMeServices()))
-				.formLogin(formLogin -> formLogin.loginPage("/login").failureUrl("/login?error")
-						.successHandler(customSuccessHandler()).permitAll())
-				.exceptionHandling(ex -> ex.accessDeniedPage("/access-denied"));
+	@Bean
+	SecurityFilterChain filterChain(HttpSecurity http,
+									CustomLogoutHandler customLogoutHandler,
+									SessionRegistry sessionRegistry) throws Exception {
+		http
+				.authorizeHttpRequests(authorize -> authorize
+						.dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE).permitAll()
+						.requestMatchers("/", "/login", "/register", "/product/**", "/client/**", "/css/**", "/js/**",
+								"/images/**", "/forgot_password", "/reset_password", "/message", "/collections")
+						.permitAll()
+						.requestMatchers("/admin/**").hasRole("ADMIN")
+						.anyRequest().authenticated()
+				)
+				.sessionManagement(session -> session
+						.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+						.invalidSessionUrl("/login?expired=true")
+						.maximumSessions(1)
+						.maxSessionsPreventsLogin(true)
+						.expiredSessionStrategy(sessionInformationExpiredStrategy())
+						.sessionRegistry(sessionRegistry)
+				)
+				.logout(logout -> logout
+						.logoutUrl("/logout")
+						.addLogoutHandler(customLogoutHandler)
+						.deleteCookies("JSESSIONID")
+						.permitAll()
+				)
+				.formLogin(formLogin -> formLogin
+						.loginPage("/login")
+						.failureUrl("/login?error=true")
+						.successHandler(customSuccessHandler())
+						.permitAll()
+				)
+				.exceptionHandling(ex -> ex.accessDeniedPage("/access-denied"))
+				.rememberMe(remember -> remember.disable());
 
 		return http.build();
 	}
-
 }
